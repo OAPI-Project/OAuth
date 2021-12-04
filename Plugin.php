@@ -88,6 +88,7 @@ class Plugin implements PluginInterface
         self::$_redis = OMRedis::get()->redis;
 
         \OAPI\Plugin\Plugin::actionRegisterRouter(__CLASS__);
+        \OAPIPlugin\Admin\Plugin::addAdminRouter(__CLASS__);
 
         new Core(self::$_db, self::$_redis);
         // 设置默认调用次数
@@ -134,38 +135,16 @@ class Plugin implements PluginInterface
         $page = strtolower($page);
         $file = __DIR__ . '/Template/' . $page . ".vue";
 
-        if (!file_exists($file)) {
-            return [
-                "status"    => false,
-                "code"      => 404,
-                "message"   => "模板 {$page} 不存在"
-            ];
-        }
-
-        $page_file = file_get_contents($file);
-        $has_template = preg_match("/<template>([\s\S]*)<\/template>/is", $page_file, $template);
-        $has_script = preg_match("/<script>([\s\S]*)<\/script>/is", $page_file, $script);
-        $has_style = preg_match("/<style.*>([\s\S]*)<\/style>/is", $page_file, $style);
-
-        return [
-            "status"      => true,
-            "data"        => [
-                "template"    => $has_template ? trim($template[0]) : "<template><div>Not Found</div></template>",
-                "script"      => $has_script ? trim($script[1]) : "",
-                "style"       => $has_style ? trim($style[1]) : "",
-                "scoped"      => preg_match("/<style.*noscoped>([\s\S]*)<\/style>/is", $page_file) ? false : true
-            ],
-            "isJSON"      => true
-        ];
+        return \OAPIPlugin\Admin\VueTemplate::load($file, $page);
     }
 
     /**
      * OAuth API
      * 
      * @version 1
-     * @path /admin/oauth
+     * @path /oauth
      */
-    public static function OAuthAPI_Action($request, $response, $matches)
+    public static function OAuthAPI_Admin_Action($request, $response, $matches)
     {
         if (HTTP::lockMethod(["GET", "POST", "DELETE"]) == false) return;
 
